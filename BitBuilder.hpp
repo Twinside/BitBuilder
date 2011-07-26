@@ -27,8 +27,8 @@ namespace BitBuilder
         {
             typedef typename
                     list<uint8_t, uint16_t, uint32_t, uint64_t>::type typeList;
-            typedef // typename 
-                    greater_equal< times< sizeof_< _1 >, integral_c<std::size_t, 8u> >
+
+            typedef greater_equal< times< sizeof_< _1 >, integral_c<std::size_t, 8u> >
                                  , integral_c<std::size_t, bitCount> > searchPredicate;
 
             typedef typename find_if< typeList, searchPredicate >::type searchResult;
@@ -38,8 +38,10 @@ namespace BitBuilder
         };
     }
 
-    /**
-     *
+    /** Wrapper around an integral type for storing bits.
+     * Provide some high-level facility to write declaratively
+     * the content of the integer at the byte level. Support
+     * slicing.
      */
     template <int bitCount>
     class Word
@@ -50,10 +52,27 @@ namespace BitBuilder
         explicit Word( inner_type t ) : data( t )
         {}
 
+        /** Bit concatenation operator.
+         * Place the right hand side of the operator into the Most significant
+         * bits for the word. Operator version of the append method.
+         *
+         * example:
+         * (Word<4>(0xD) | Word<4>(0xA) | Word<4>(0xE) | Word<4>(0xD)) == 0xDEAD
+         * \see append
+         */
         template <int toAppend>
         Word<bitCount + toAppend> operator |( Word<toAppend> p ) const
             { return append(p); }
 
+        /** Bit concatenation method.
+         * Place the argument into the Most significant
+         * bits for the word. Operator version of the append method.
+         *
+         * example:
+         * (Word<4>(0xD).append(Word<4>(0xA))
+         *              .append(Word<4>(0xE))
+         *              .append(Word<4>(0xD))) == 0xDEAD
+         */
         template <int toAppend>
         Word<bitCount + toAppend>   append( Word<toAppend> p ) const
         {
@@ -65,6 +84,13 @@ namespace BitBuilder
                            | (static_cast<upCast>(static_cast<otherType>(p)) << bitCount) );
         }
 
+        /** Given the last written bit at bitCount - 1 position, append
+         * it's opposite in the word.
+         *
+         * Examples:
+         * Word<4>(7).appendNotPreviousBit() == 0x17
+         * Word<4>(8).appendNotPreviousBit() == 0x08
+         */
         Word<bitCount + 1>  appendNotPreviousBit() const
         {
             typedef Word<bitCount + 1>      ret_type;
@@ -74,17 +100,35 @@ namespace BitBuilder
                                        (static_cast<upCast>(1) << (bitCount - 1))) >> (bitCount - 1));
         }
 
+        /** Return the bit at bitPosition, starting at 0 for the
+         * least significant bit.
+         *
+         * example:
+         * Word<4>(4).bit<2>() == 1
+         * Word<4>(4).bit<1>() == 0
+         */
         template <int bitPosition>
         Word<1> bit() const
         {
-            return Word<1>( (data & (1 << bitPosition)) >> bitPosition );
+            inner_type one = static_cast<inner_type>(1);
+            return Word<1>( (data & (one << bitPosition)) >> bitPosition );
         }
 
+        /** Return the bit at bitPosition, starting at 0 for the
+         * least significant bit.
+         *
+         * example:
+         * Word<4>(4).bit(2) == 1
+         * Word<4>(4).bit(1) == 0
+         */
         Word<1> bit(size_t  bitPosition)
         {
-            return Word<1>( (data & (1 << bitPosition)) >> bitPosition );
+            inner_type one = static_cast<inner_type>(1);
+            return Word<1>( (data & (one << bitPosition)) >> bitPosition );
         }
 
+
+        /** Get back the built data */
         operator inner_type() const { return data; }
 
     private:
