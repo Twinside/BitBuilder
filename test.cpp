@@ -19,6 +19,9 @@ int main( int argc, char **argv )
 
     std::cout << uint32_t( Word<4>( 0xD ) | Word<4>( 0xA ) | Word<4>( 0xE ) | Word<4>( 0xD ))
               << std::endl;
+
+    std::cout << uint32_t(Word<16>( 0xDEAD ).evenParityBit()) << std::endl;
+    std::cout << uint32_t(Word<16>( 0xDEAC ).evenParityBit()) << std::endl;
     return 0;
 }
 
