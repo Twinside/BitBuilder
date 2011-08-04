@@ -1,43 +1,12 @@
 #ifndef __BITBUILDER_HPP__
 #define __BITBUILDER_HPP__
 
-#include <boost/mpl/find_if.hpp>
-#include <boost/mpl/list.hpp>
-#include <boost/mpl/arithmetic.hpp>
-#include <boost/mpl/placeholders.hpp>
-#include <boost/mpl/comparison.hpp>
-#include <boost/mpl/list.hpp>
-#include <boost/mpl/sizeof.hpp>
+#include <boost/integer.hpp>
 
 #include <stdint.h>
 
 namespace BitBuilder
 {
-    namespace detail
-    {
-        using namespace boost;
-        using namespace boost::mpl;
-        
-
-        /** Find the smallest possible integral type which can carry
-         * bitCount bits.
-         */
-        template <uint32_t bitCount>
-        class IntegralType
-        {
-            typedef typename
-                    list<uint8_t, uint16_t, uint32_t, uint64_t>::type typeList;
-
-            typedef greater_equal< times< sizeof_< _1 >, integral_c<std::size_t, 8u> >
-                                 , integral_c<std::size_t, bitCount> > searchPredicate;
-
-            typedef typename find_if< typeList, searchPredicate >::type searchResult;
-
-        public:
-            typedef typename deref<searchResult>::type type;
-        };
-    }
-
     /** Wrapper around an integral type for storing bits.
      * Provide some high-level facility to write declaratively
      * the content of the integer at the byte level. Support
@@ -47,7 +16,7 @@ namespace BitBuilder
     class Word
     {
     public:
-        typedef typename detail::IntegralType<bitCount>::type inner_type;
+        typedef typename boost::uint_t<bitCount>::least inner_type;
 
         explicit Word( inner_type t ) : data( t )
         {}
@@ -121,7 +90,7 @@ namespace BitBuilder
          * Word<4>(4).bit(2) == 1
          * Word<4>(4).bit(1) == 0
          */
-        Word<1> bit(size_t  bitPosition)
+        Word<1> bit(size_t  bitPosition) const
         {
             inner_type one = static_cast<inner_type>(1);
             return Word<1>( (data & (one << bitPosition)) >> bitPosition );
